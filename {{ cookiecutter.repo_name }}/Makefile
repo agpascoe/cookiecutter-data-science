@@ -58,11 +58,7 @@ endif
 create_environment:
 ifeq (True,$(HAS_CONDA))
 		@echo ">>> Detected conda, creating conda environment."
-ifeq (3,$(findstring 3,$(PYTHON_INTERPRETER)))
 	conda create --name $(PROJECT_NAME) python=3
-else
-	conda create --name $(PROJECT_NAME) python=2.7
-endif
 		@echo ">>> New conda env created. Activate with:\nsource activate $(PROJECT_NAME)"
 else
 	$(PYTHON_INTERPRETER) -m pip install -q virtualenv virtualenvwrapper
@@ -74,7 +70,7 @@ endif
 
 ## Test python environment is setup correctly
 test_environment:
-	$(PYTHON_INTERPRETER) test_environment.py
+	$python3 test_environment.py
 
 #################################################################################
 # PROJECT RULES                                                                 #
