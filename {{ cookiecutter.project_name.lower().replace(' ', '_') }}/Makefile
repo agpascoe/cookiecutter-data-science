@@ -5,10 +5,10 @@
 #################################################################################
 
 PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-BUCKET = {{ cookiecutter.s3_bucket }}
+REPO_NAME = {{ cookiecutter.project_name.lower().replace(' ', '_')}}
+BUCKET = {{ cookiecutter.client }}-$(REPO_NAME)-Bucket
 PROFILE = {{ cookiecutter.aws_profile }}
-PROJECT_NAME = {{ cookiecutter.repo_name }}
-PROJECT_ID = {{ cookiecutter.project_id }}
+PROJECT_NAME = $(REPO_NAME)
 CLIENT = {{ cookiecutter.client }}
 
 ifeq (,$(shell which conda))
@@ -35,10 +35,6 @@ clean:
 	find . -type f -name "*.py[co]" -delete
 	find . -type d -name "__pycache__" -delete
 
-## Lint using flake8
-lint:
-	flake8 src
-
 ## Upload Data to S3
 sync_data_to_s3:
 ifeq (default,$(PROFILE))
@@ -47,6 +43,24 @@ else
 	aws s3 sync data/ s3://$(BUCKET)/data/ --profile $(PROFILE)
 endif
 
+## create a s3 project bucket
+create_s3:
+ifeq (default,$(PROFILE))
+	aws s3api create-bucket --bucket $(BUCKET) 
+else
+	aws s3api create-bucket --bucket $(BUCKET)  --profile $(PROFILE)
+endif
+	
+## init DVC in S3
+init_dvc_in_s3:
+	dvc init --force
+	dvc add data/ 
+	git add .
+	# git commit -m "Add raw data"
+	dvc remote add -d storage s3://$(BUCKET)/dvcstore --force
+	dvc push
+	git push
+	
 ## Download Data from S3
 sync_data_from_s3:
 ifeq (default,$(PROFILE))
@@ -59,19 +73,19 @@ endif
 create_environment:
 ifeq (True,$(HAS_CONDA))
 		@echo ">>> Detected conda, creating conda environment."
-	conda create --name $(PROJECT_NAME) python=3
+	conda create --name $(PROJECT_NAME) python=3.10
 		@echo ">>> New conda env created. Activate with:\nsource activate $(PROJECT_NAME)"
 else
-	$(PYTHON_INTERPRETER) -m pip install -q virtualenv virtualenvwrapper
+	$ python3 -m pip install -q virtualenv virtualenvwrapper
 	@echo ">>> Installing virtualenvwrapper if not already installed.\nMake sure the following lines are in shell startup file\n\
 	export WORKON_HOME=$$HOME/.virtualenvs\nexport PROJECT_HOME=$$HOME/Devel\nsource /usr/local/bin/virtualenvwrapper.sh\n"
-	@bash -c "source `which virtualenvwrapper.sh`;mkvirtualenv $(PROJECT_NAME) --python=$(PYTHON_INTERPRETER)"
+	@bash -c "source `which virtualenvwrapper.sh`;mkvirtualenv $(PROJECT_NAME) --python=python3"
 	@echo ">>> New virtualenv created. Activate with:\nworkon $(PROJECT_NAME)"
 endif
 
 ## Test python environment is setup correctly
 test_environment:
-	$python3 test_environment.py
+	$ python3 test_environment.py
 
 #################################################################################
 # PROJECT RULES                                                                 #
