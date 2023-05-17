@@ -8,7 +8,8 @@ PROJECT_DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 BUCKET = {{ cookiecutter.s3_bucket }}
 PROFILE = {{ cookiecutter.aws_profile }}
 PROJECT_NAME = {{ cookiecutter.repo_name }}
-PYTHON_INTERPRETER = {{ cookiecutter.python_interpreter }}
+PROJECT_ID = {{ cookiecutter.project_id }}
+CLIENT = {{ cookiecutter.client }}
 
 ifeq (,$(shell which conda))
 HAS_CONDA=False
@@ -22,12 +23,12 @@ endif
 
 ## Install Python Dependencies
 requirements: test_environment
-	$(PYTHON_INTERPRETER) -m pip install -U pip setuptools wheel
-	$(PYTHON_INTERPRETER) -m pip install -r requirements.txt
+	$ python3 -m pip install -U pip setuptools wheel
+	$ python3 -m pip install -r requirements.txt
 
 ## Make Dataset
 data: requirements
-	$(PYTHON_INTERPRETER) src/data/make_dataset.py data/raw data/processed
+	$ python3 src/data/make_dataset.py data/raw data/processed
 
 ## Delete all compiled Python files
 clean:
